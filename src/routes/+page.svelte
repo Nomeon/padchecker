@@ -14,15 +14,25 @@
     let csv_path: string = "";
 
     async function checkFilesExistence(filePaths: String[]) {
-        for(let path of filePaths) {
-            invoke('check_file_exists', { filePath: path }).then((result) => {
-                if (result !== "exists") {
-                    // Only add the file to the missingFiles array if it's not already in there
-                    if (!missingFiles.includes(path)){ 
-                        missingFiles = [...missingFiles, path];
+        for (let path of filePaths) {
+            await invoke('check_file_exists', { filePath: path }).then((result) => {
+                if (!result) {
+                    if (path.includes('VMG')) {
+                        let newPath = path.replace("01. Zagen", "02. Frezen");
+                        invoke('check_file_exists', { filePath: newPath }).then((result) => {
+                            !result && addToMissingFiles(newPath);
+                        })
+                    } else {
+                        addToMissingFiles(path);
                     }
                 }
             })
+        }
+    }
+
+    function addToMissingFiles(path: String) {
+        if (!missingFiles.includes(path)) {
+            missingFiles = [...missingFiles, path];
         }
     }
 
@@ -38,10 +48,15 @@
                 console.error("Error in de CSV data");
                 return [];
             }
-            if (filePath.includes('VH')) {
-                return createVHPath(results.data);
-            } else {
-                return createBBPath(results.data);
+            switch(true) {
+                case filePath.includes('VH'):
+                    return createVHPath(results.data);
+                case filePath.includes('BB'):
+                    return createBBPath(results.data);
+                case filePath.includes('VMG'):
+                    return createVMGPath(results.data);
+                default:
+                    return [];
             }
         } catch (error) {
             console.error(`Error bij het lezen of verwerken van ${filePath}:`, error);
@@ -52,7 +67,7 @@
     function createVHPath(dataRows: any[]) {
         let paths: any = [];
         for (let row of dataRows) {
-            let path = "01. VH\\" + row['Bestand'].split("\\").slice(3).join("\\");
+            let path = "01. VH\\" + row['Bestand'].split("\\").slice(3).join("\\").split('.')[0];
             paths.push(path);
         }
         return paths;
@@ -61,7 +76,16 @@
     function createBBPath(dataRows: any[]) {
         let paths: any = [];
         for (let row of dataRows) {
-            let path = "02. BB\\" + row['OnderdeelNaam'].split(' ')[0] + " " + row['OnderdeelNaam'].split(' ')[1] + "\\" + row['Productcode'] + ".DWG"
+            let path = "02. BB\\" + row['OnderdeelNaam'].split(' ')[0] + " " + row['OnderdeelNaam'].split(' ')[1] + "\\" + row['Productcode']
+            paths.push(path);
+        }
+        return paths;
+    }
+    
+    function createVMGPath(dataRows: any[]) {
+        let paths: any = [];
+        for (let row of dataRows) {
+            let path = "03. VMG\\01. Zagen\\" + row['Materiaal'] + "\\" + row['Productcode'];
             paths.push(path);
         }
         return paths;
@@ -101,6 +125,7 @@
             directory: true
         });
         if (result) {
+            missingFiles = [];
             csv_path = result.toString();
             const entries = await fs.readDir(csv_path);
             readCSVfiles(entries.map((entry) => entry.path));
