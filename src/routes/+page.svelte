@@ -11,7 +11,6 @@
 
     let missingFiles: String[] = [];
     let base_path: string = "";
-    let csv_path: string = "";
 
     async function checkFilesExistence(filePaths: String[]) {
         for (let path of filePaths) {
@@ -85,7 +84,7 @@
     function createVMGPath(dataRows: any[]) {
         let paths: any = [];
         for (let row of dataRows) {
-            let path = "03. VMG\\01. Zagen\\" + row['Materiaal'] + "\\" + row['Productcode'];
+            let path = "03. VMG\\01. Zagen\\" + row['Productcode'];
             paths.push(path);
         }
         return paths;
@@ -122,13 +121,12 @@
 
     async function setCSVPath() {
         const result = await dialog.open({
-            directory: true
-        });
+            multiple: true,
+            filters: [{ name: 'CSV', extensions: ['csv'] }]
+        }) as string[];
         if (result) {
             missingFiles = [];
-            csv_path = result.toString();
-            const entries = await fs.readDir(csv_path);
-            readCSVfiles(entries.map((entry) => entry.path));
+            readCSVfiles(result.map((entry) => entry));
         }
     }
 

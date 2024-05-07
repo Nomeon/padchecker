@@ -8,7 +8,7 @@
   },
   "package": {
     "productName": "Padchecker",
-    "version": "0.0.4"
+    "version": "0.0.6"
   },
   "tauri": {
     "allowlist": {
@@ -68,7 +68,7 @@
         "fullscreen": false,
         "height": 600,
         "resizable": true,
-        "title": "Pad Checker",
+        "title": "Pad Checker 0.0.6",
         "width": 800
       }
     ]
